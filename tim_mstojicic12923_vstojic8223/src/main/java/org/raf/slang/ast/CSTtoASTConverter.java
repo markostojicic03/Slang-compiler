@@ -1,4 +1,6 @@
 package org.raf.slang.ast;
 
-public class CSTtoASTConverter {
+import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
+
+public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> {
 }

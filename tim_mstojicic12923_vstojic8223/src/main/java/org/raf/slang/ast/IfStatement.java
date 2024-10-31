@@ -11,7 +11,7 @@ public class IfStatement extends Statement{
     }
 
     @Override
-    public void nodePrint(ASTNodePrinter pp) {
-
+    public void nodePrint(ASTNodePrinter printIfStatement) {
+        printIfStatement.node("if", () -> exprList.forEach(x -> x.nodePrint(printIfStatement)));
     }
 }

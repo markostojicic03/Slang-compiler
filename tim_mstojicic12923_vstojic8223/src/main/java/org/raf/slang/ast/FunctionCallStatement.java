@@ -1,12 +1,22 @@
 package org.raf.slang.ast;
 
+import java.util.List;
+
 public class FunctionCallStatement extends Statement{
-    public FunctionCallStatement(Location location) {
+
+    private String name;
+    private List<Expr> arguments;
+
+
+    public FunctionCallStatement(Location location, String name, List<Expr> arguments) {
         super(location);
+        this.name = name;
+        this.arguments = arguments;
+
     }
 
     @Override
-    public void nodePrint(ASTNodePrinter pp) {
-
+    public void nodePrint(ASTNodePrinter functionCallPrint) {
+        functionCallPrint.node("function call " + name, () -> arguments.forEach(x -> x.nodePrint(functionCallPrint)));
     }
 }

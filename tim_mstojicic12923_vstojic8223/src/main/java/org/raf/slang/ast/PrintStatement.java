@@ -18,6 +18,6 @@ public class PrintStatement extends Statement{
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
-
+        pp.node("print", () -> arguments.forEach(x -> x.nodePrint(pp)));
     }
 }

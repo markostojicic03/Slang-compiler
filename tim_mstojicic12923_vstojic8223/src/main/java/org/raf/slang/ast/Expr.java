@@ -62,6 +62,10 @@ public class Expr extends Tree{
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
-
+        pp.node(operation.label,
+                () -> {
+                    lhs.nodePrint(pp);
+                    rhs.nodePrint(pp);
+                });
     }
 }

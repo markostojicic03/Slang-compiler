@@ -11,14 +11,16 @@ import java.util.List;
 @EqualsAndHashCode
 public class ArrayLiteral extends Statement{
 
-    private List<NumberLiteral> elements;
-    public ArrayLiteral(Location location, List<NumberLiteral> elements) {
+    private String name;
+    private List<Expr> elements;
+    public ArrayLiteral(Location location,String name,List<Expr> elements) {
         super(location);
+        this.name = name;
         this.elements = elements;
     }
 
     @Override
-    public void nodePrint(ASTNodePrinter pp) {
-
+    public void nodePrint(ASTNodePrinter arrayForPrint) {
+        arrayForPrint.node("array", () -> elements.forEach(x -> x.nodePrint(arrayForPrint)));// u ovom lambda izrazu se poziva nodePrint za svaki element liste pojedinacno
     }
 }

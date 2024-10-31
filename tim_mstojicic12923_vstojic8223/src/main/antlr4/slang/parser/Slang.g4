@@ -17,7 +17,7 @@ statement
     ;
 
 simpleStatement
-    :NUMBER_KEYWORD ID ('=' expr)? ';'
+    : NUMBER_KEYWORD ID ('=' expr)? ';'
     | BOOLEAN_KEYWORD ID ('=' expr)? ';'
     | ID '=' expr ';'
     | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
@@ -88,10 +88,6 @@ core
 
 // LEKSICKA GRAMATIKA
 
-//fragment DIGIT: [0-9];
-/*
-** proveriti za grab i dropmsg
-*/
 IF_KEYWORD: 'check';
 ELSE_KEYWORD: 'backup';
 FOR_KEYWORD: 'spin';
