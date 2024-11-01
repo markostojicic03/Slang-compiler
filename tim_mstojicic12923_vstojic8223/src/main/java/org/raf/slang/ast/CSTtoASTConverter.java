@@ -209,9 +209,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitCore(SlangParser.CoreContext ctx) {
-        if(ctx.getText().equals(ctx.NUMBER_LITERAL().toString())){
+        if(ctx.NUMBER_LITERAL()!=null && ctx.getText().equals(ctx.NUMBER_LITERAL().toString())){
             return new NumberLiteral(getLocation(ctx), Double.parseDouble(ctx.getText()));
-        }else if(ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
+        }else if(ctx.BOOLEAN_LITERAL()!=null && ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
             return new BoolLiteral(getLocation(ctx), Boolean.parseBoolean(ctx.getText()));
         }else{
             return new VariableRef(getLocation(ctx), ctx.getText());
