@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import slang.parser.SlangLexer;
 import slang.parser.SlangParser;
 import slang.parser.SlangVisitor;
 
@@ -38,52 +39,100 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitSimpleStatement(SlangParser.SimpleStatementContext ctx) {
-        return null;
+        var name = ctx.ID().getText();
+        var value = (Expr) visit(ctx.expr(0));
+        return new SimpleStatement(getLocation(ctx), name, value);
     }
 
     @Override
     public Tree visitIfStatement(SlangParser.IfStatementContext ctx) {
-        return null;
+        var exprList = ctx.expr()
+                /* Take all the parsed arguments, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to expressions, ...  */
+                .map(x -> (Expr) x)
+                /* ... and put them into a list.  */
+                .toList();
+        return new IfStatement(getLocation(ctx), exprList);
     }
 
     @Override
     public Tree visitElseStatement(SlangParser.ElseStatementContext ctx) {
-        return null;
+        ctx.statement().forEach(this::visit);//pokusati sa listom statmenta ako ovo ne radi
+        return new ElseStatement(getLocation(ctx));
     }
 
     @Override
     public Tree visitLoopStatement(SlangParser.LoopStatementContext ctx) {
-        return null;
+        var exprList = ctx.expr()
+                /* Take all the parsed arguments, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to expressions, ...  */
+                .map(x -> (Expr) x)
+                /* ... and put them into a list.  */
+                .toList();
+        return new LoopStatement(getLocation(ctx), exprList);
     }
 
     @Override
     public Tree visitFunctionDefinition(SlangParser.FunctionDefinitionContext ctx) {
-        return null;
+        var name = ctx.ID().getText();
+        var exprList = ctx.expr()
+                /* Take all the parsed arguments, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to expressions, ...  */
+                .map(x -> (Expr) x)
+                /* ... and put them into a list.  */
+                .toList();
+        return new FunctionDefinition(getLocation(ctx), name, exprList);
     }
 
     @Override
     public Tree visitFunctionCallStatement(SlangParser.FunctionCallStatementContext ctx) {
-        return null;
-    }
-
-    @Override
-    public Tree visitFunctionArgumentList(SlangParser.FunctionArgumentListContext ctx) {
-        return null;
+        var name = ctx.ID().getText();
+        var exprList = ctx.expr()
+                /* Take all the parsed arguments, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to expressions, ...  */
+                .map(x -> (Expr) x)
+                /* ... and put them into a list.  */
+                .toList();
+        return new FunctionCallStatement(getLocation(ctx), name,exprList);
     }
 
     @Override
     public Tree visitPrintStatement(SlangParser.PrintStatementContext ctx) {
-        return null;
+        var arguments = ctx.expr()
+                /* Take all the parsed arguments, ... */
+                .stream()
+                /* ... visit them using this visitor, ... */
+                .map(this::visit)
+                /* ... then cast them to expressions, ...  */
+                .map(x -> (Expr) x)
+                /* ... and put them into a list.  */
+                .toList();
+        return new PrintStatement(getLocation(ctx), arguments);
     }
 
     @Override
     public Tree visitScanStatement(SlangParser.ScanStatementContext ctx) {
-        return null;
+        var arguments = ctx.ID().getText();
+        return new ScanStatement(getLocation(ctx), arguments);
     }
 
     @Override
     public Tree visitExpr(SlangParser.ExprContext ctx) {
-        return null;
+        var subexpr = visit(ctx.getChild(0));
+
+        return (Expr) subexpr;
     }
 
     @Override
@@ -98,12 +147,36 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitMulDivOperands(SlangParser.MulDivOperandsContext ctx) {
+        var value = (Expr) visit(ctx.core());
+/*
+        assert ctx.MUL() == ctx.rest.size();
+        for (int i = 0; i < ctx.op.size(); i++) {
+            var op = ctx.op.get(i);
+            var rhs = (Expr) visit(ctx.rest.get(i));
+
+            var exprOp = switch (op.getType()) {
+                case SlangLexer.MUL -> Expr.Operation.MUL;
+                case SlangLexer.DIV -> Expr.Operation.DIV;
+                default -> throw new IllegalArgumentException("unhandled expr op " + op);
+            };
+
+            var loc = value.getLocation().span(rhs.getLocation());
+            value = new Expr(loc, exprOp, value, rhs);
+        }
+        return value;
+*/
         return null;
     }
 
     @Override
     public Tree visitCore(SlangParser.CoreContext ctx) {
-        return null;
+        if(ctx.getText().equals(ctx.NUMBER_LITERAL().toString())){
+            return new NumberLiteral(getLocation(ctx), Double.parseDouble(ctx.getText()));
+        }else if(ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
+            return new BoolLiteral(getLocation(ctx), Boolean.parseBoolean(ctx.getText()));
+        }else{
+            return new VariableRef(getLocation(ctx), ctx.getText());
+        }
     }
     /// FUNKCIJE ZA LOKACIJU
 

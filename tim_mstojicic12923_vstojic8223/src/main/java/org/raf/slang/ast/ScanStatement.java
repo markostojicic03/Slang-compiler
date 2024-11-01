@@ -1,19 +1,20 @@
 package org.raf.slang.ast;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ScanStatement extends Statement {
 
-    private List<Expr> arguments;
+    //private List<Expr> arguments;
+    private String name;
 
-
-    public ScanStatement(Location location, List<Expr> arguments) {
+    public ScanStatement(Location location, String name) {
         super(location);
-        this.arguments = arguments;
+        this.name = name;
     }
 
     @Override
     public void nodePrint(ASTNodePrinter pp) {
-        pp.node("scan", () -> arguments.forEach(x -> x.nodePrint(pp)));
+        pp.node("scan ", () -> pp.terminal(Objects.toString(name)));
     }
 }

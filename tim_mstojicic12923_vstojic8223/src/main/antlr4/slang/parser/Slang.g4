@@ -39,15 +39,11 @@ loopStatement
 
 
 functionDefinition
-    : FUNCTION_KEYWORD ID '(' functionArgumentList? ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
+    :  FUNCTION_KEYWORD ID '(' (expr? (',' expr)*?) ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
     ;
 
 functionCallStatement
-    : ID '(' functionArgumentList? ')' ';'
-    ;
-
-functionArgumentList
-    : expr (',' expr)*
+    : ID '(' (expr? (',' expr)*?) ')' ';'
     ;
 
 printStatement
