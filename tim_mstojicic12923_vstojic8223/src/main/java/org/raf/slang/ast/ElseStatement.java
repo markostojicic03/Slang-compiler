@@ -5,12 +5,15 @@ import java.util.Objects;
 
 public class ElseStatement extends Statement{
 
-    public ElseStatement(Location location) {
+    private List<Statement> statementList;
+
+    public ElseStatement(Location location, List<Statement> statementList) {
         super(location);
+        this.statementList = statementList;
     }
 
     @Override
     public void nodePrint(ASTNodePrinter printElseStatement) {
-        printElseStatement.node("else", () -> printElseStatement.terminal("else"));
+        printElseStatement.node("else", () -> {printElseStatement.terminal("else"); statementList.forEach(statement -> statement.nodePrint(printElseStatement));});
     }
 }

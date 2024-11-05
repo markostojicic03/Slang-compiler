@@ -9,6 +9,7 @@ start
 statement
     : simpleStatement
     | ifStatement
+    | elseStatement
     | loopStatement
     | printStatement
     | scanStatement
@@ -24,7 +25,7 @@ simpleStatement
     ;
 
 ifStatement
-    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==') expr ')' '{'(statement)* '}' (elseStatement)?
+    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==') expr ')' '{'(statement)* '}'
     ;
 
 elseStatement

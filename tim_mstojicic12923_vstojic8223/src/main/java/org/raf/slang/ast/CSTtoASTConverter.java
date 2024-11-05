@@ -55,13 +55,24 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Expr) x)
                 /* ... and put them into a list.  */
                 .toList();
-        return new IfStatement(getLocation(ctx), exprList);
+        var statementList = ctx.statement()
+                .stream()
+                .map(this::visit)
+                .map(x -> (Statement) x)
+                .toList();
+
+        return new IfStatement(getLocation(ctx), exprList, statementList);
     }
 
     @Override
     public Tree visitElseStatement(SlangParser.ElseStatementContext ctx) {
-        ctx.statement().forEach(this::visit);//pokusati sa listom statmenta ako ovo ne radi
-        return new ElseStatement(getLocation(ctx));
+       // ctx.statement().forEach(this::visit);
+        var statementList = ctx.statement()
+                .stream()
+                .map(this::visit)
+                .map(x -> (Statement) x)
+                .toList();
+        return new ElseStatement(getLocation(ctx), statementList);
     }
 
     @Override
@@ -75,7 +86,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Expr) x)
                 /* ... and put them into a list.  */
                 .toList();
-        return new LoopStatement(getLocation(ctx), exprList);
+
+        var statementList = ctx.statement()
+                .stream()
+                .map(this::visit)
+                .map(x -> (Statement) x)
+                .toList();
+
+        return new LoopStatement(getLocation(ctx), exprList, statementList);
     }
 
     @Override
@@ -90,7 +108,12 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Expr) x)
                 /* ... and put them into a list.  */
                 .toList();
-        return new FunctionDefinition(getLocation(ctx), name, exprList);
+        var statementList = ctx.statement()
+                .stream()
+                .map(this::visit)
+                .map(x -> (Statement) x)
+                .toList();
+        return new FunctionDefinition(getLocation(ctx), name, exprList, statementList);
     }
 
     @Override
