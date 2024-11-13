@@ -15,6 +15,7 @@ statement
     | scanStatement
     | functionDefinition
     | functionCallStatement
+    | renameStatement
     ;
 
 simpleStatement
@@ -24,8 +25,12 @@ simpleStatement
     | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     ;
 
+renameStatement
+: RENAME_KEYWORD ID ID ';'
+;
+
 ifStatement
-    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr ')' '{'(statement)* '}'
+    : IF_KEYWORD '(' (('!' expr)? | expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ')' '{' (statement)* '}'
     ;
 
 elseStatement
@@ -59,6 +64,7 @@ expr
     : functionCallStatement
     | expr (AND | OR) relationalOperands
     | relationalOperands
+    | BANG expr
     ;
 
 relationalOperands
@@ -97,6 +103,7 @@ ARRAY_KEYWORD: 'squad';
 PRINT_KEYWORD: 'dropmsg';
 SCAN_KEYWORD: 'grabmsg';
 FUNCTION_KEYWORD: 'action';
+RENAME_KEYWORD: 'rename';
 // LITERALS
 BOOLEAN_LITERAL: 'true' | 'false';
 NUMBER_LITERAL: ('-')? [0-9]+ ('.' [0-9]+)?;

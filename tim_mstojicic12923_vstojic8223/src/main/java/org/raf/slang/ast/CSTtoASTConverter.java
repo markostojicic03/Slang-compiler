@@ -45,6 +45,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     }
 
     @Override
+    public Tree visitRenameStatement(SlangParser.RenameStatementContext ctx) {
+        var variable = ctx.ID().get(0).toString();
+        var variableReplace = ctx.ID().get(1).toString();
+        return new Rename(getLocation(ctx), variable, variableReplace);
+    }
+
+    @Override
     public Tree visitIfStatement(SlangParser.IfStatementContext ctx) {
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
@@ -153,9 +160,18 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     @Override
     public Tree visitExpr(SlangParser.ExprContext ctx) {
-        var subexpr = visit(ctx.getChild(0));
+        var subexpr = (Expr) visit(ctx.getChild(0));
+        Expr.Operation exprOp = null;
+        if (ctx.getParent().children.contains("!")) {
+            exprOp = Expr.Operation.BANG;
+            var loc = subexpr.getLocation().span(subexpr.getLocation());
+            return new Expr(loc, subexpr, exprOp);
+        }
+        var left = (Expr) visit(ctx.relationalOperands());
 
-        return (Expr) subexpr;
+
+        var loc = left.getLocation().span(subexpr.getLocation());
+        return subexpr;
     }
 
     @Override

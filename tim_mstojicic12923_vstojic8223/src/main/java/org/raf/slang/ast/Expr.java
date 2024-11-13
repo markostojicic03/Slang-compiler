@@ -60,6 +60,13 @@ public class Expr extends Tree{
         this.operation = Operation.VALUE;
     }
 
+    protected Expr(Location location, Expr expr,Operation operation)
+    {
+        super(location);
+        this.lhs = expr;
+        this.operation = operation;
+    }
+
     @Override
     public void nodePrint(ASTNodePrinter pp) {
         pp.node(operation.label,
