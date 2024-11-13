@@ -23,25 +23,32 @@ public class Main {
 
 
     public static void main(String[] args) throws IOException {
-        if (args.length == 1) {
-            runFile(args[0]);
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+        System.out.println("1. Write a code");
+        System.out.println("2. Load a code from file");
+        System.out.print("Choose your option: ");
+        int answer = scanner.nextInt();
+        if (answer == 2) {
+            System.out.print("Write your file path: ");
+            String path = scanner.next();
+            runFile(path);
         } else {
             runPrompt();
         }
     }
-
+//      src\main\java\org\raf\slang\resources\test.txt
     private static void runFile(String path) throws IOException {
-//        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
-//            StringBuilder content = new StringBuilder();
-//            String line;
-//            while ((line = reader.readLine()) != null) {
-//                content.append(line).append(System.lineSeparator());
-//            }
-//            run(content.toString());
-//        }
-//
-//        if (hadError) System.exit(65);
-//        if (hadRuntimeError) System.exit(70);
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            StringBuilder content = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append(System.lineSeparator());
+            }
+            run(CharStreams.fromString(content.toString()));
+        }
+
+        if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
         run(CharStreams.fromFileName(path));
         if (slang.hadError()) System.exit(65);
         if (slang.hadRuntimeError()) System.exit(70);
