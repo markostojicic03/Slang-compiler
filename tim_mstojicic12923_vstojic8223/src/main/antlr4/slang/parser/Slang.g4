@@ -15,7 +15,6 @@ statement
     | scanStatement
     | functionDefinition
     | functionCallStatement
-    | renameStatement
     ;
 
 simpleStatement
@@ -25,22 +24,20 @@ simpleStatement
     | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
     ;
 
-renameStatement
-: RENAME_KEYWORD ID ID ';'
-;
 
 ifStatement
-    : IF_KEYWORD '(' (('!' expr)? | expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ')' '{' (statement)* '}'
+    : IF_KEYWORD '(' (('!' expr)? | (expr ('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr) ) ')' '{' (statement)* '}'
     ;
 
 elseStatement
     : ELSE_KEYWORD '{'(statement)* '}'
     ;
 
-
+//bool flag = true
+//for(int i = 0;!flag;++i)
 loopStatement
-    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' | '<=' | '>=' | '&&' | '||') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
-    | WHILE_KEYWORD '(' ID ('<' | '>' | '<=' | '>='| '&&' | '||') expr  ')''{' (statement)* '}'
+    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ((BANG)? ID (('<' | '>' | '<=' | '>=' | '&&' | '||') expr)? )+ ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
+    | WHILE_KEYWORD '(' ((BANG)? ID (('<' | '>' | '<=' | '>='| '&&' | '||') expr)?)+  ')''{' (statement)* '}'
     ;
 
 
@@ -63,8 +60,8 @@ scanStatement
 expr
     : functionCallStatement
     | expr (AND | OR) relationalOperands
+    | BANG  expr
     | relationalOperands
-    | BANG expr
     ;
 
 relationalOperands
@@ -103,7 +100,6 @@ ARRAY_KEYWORD: 'squad';
 PRINT_KEYWORD: 'dropmsg';
 SCAN_KEYWORD: 'grabmsg';
 FUNCTION_KEYWORD: 'action';
-RENAME_KEYWORD: 'rename';
 // LITERALS
 BOOLEAN_LITERAL: 'true' | 'false';
 NUMBER_LITERAL: ('-')? [0-9]+ ('.' [0-9]+)?;

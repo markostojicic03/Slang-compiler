@@ -8,6 +8,8 @@ import slang.parser.SlangLexer;
 import slang.parser.SlangParser;
 import slang.parser.SlangVisitor;
 
+import java.util.Objects;
+
 public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements SlangVisitor<Tree> {
     @Override
     public Tree visitStart(SlangParser.StartContext ctx) {
@@ -44,12 +46,6 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         return new SimpleStatement(getLocation(ctx), name, value);
     }
 
-    @Override
-    public Tree visitRenameStatement(SlangParser.RenameStatementContext ctx) {
-        var variable = ctx.ID().get(0).toString();
-        var variableReplace = ctx.ID().get(1).toString();
-        return new Rename(getLocation(ctx), variable, variableReplace);
-    }
 
     @Override
     public Tree visitIfStatement(SlangParser.IfStatementContext ctx) {
@@ -162,7 +158,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public Tree visitExpr(SlangParser.ExprContext ctx) {
         var subexpr = (Expr) visit(ctx.getChild(0));
         Expr.Operation exprOp = null;
-        if (ctx.getParent().children.contains("!")) {
+        if (ctx.getParent().children.toString().contains("!")) {
             exprOp = Expr.Operation.BANG;
             var loc = subexpr.getLocation().span(subexpr.getLocation());
             return new Expr(loc, subexpr, exprOp);
@@ -185,15 +181,15 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
         var operatorText = ctx.getChild(1).getText();
         Expr.Operation exprOp;
-        if(operatorText == ">")
+        if(Objects.equals(operatorText, ">"))
             exprOp = Expr.Operation.GREATERTHAN;
-        else if(operatorText == "<")
+        else if(Objects.equals(operatorText, "<"))
             exprOp = Expr.Operation.LESSTHAN;
-        else if (operatorText == ">=")
+        else if (Objects.equals(operatorText, ">="))
             exprOp = Expr.Operation.GREATERTHANOREQ;
-        else if(operatorText == "<=")
+        else if(Objects.equals(operatorText, "<="))
             exprOp = Expr.Operation.LESSTHANOREQ;
-        else if(operatorText == "==")
+        else if(Objects.equals(operatorText, "=="))
             exprOp = Expr.Operation.EQUALTO;
         else
             throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
