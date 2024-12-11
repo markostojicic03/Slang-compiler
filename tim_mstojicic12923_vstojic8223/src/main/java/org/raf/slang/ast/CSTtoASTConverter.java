@@ -225,7 +225,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     @Override
     public Tree visitFunctionDefinition(SlangParser.FunctionDefinitionContext ctx) {
         openBlock();
-        var name = ctx.ID().getText();
+        var name = ctx.ID().getFirst().getText();
         var parameterList = ctx.functionParameter()
                 /* Take all the parsed arguments, ... */
                 .stream()
@@ -248,6 +248,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+
+        var dataForReturn = ctx.ID().getLast().getText();
+        if(dataForReturn != null){
+            SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
+            if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");
+        }
+
         var function = new FunctionDefinition(getLocation(ctx), name, parameterList, statementList);
 
         closeBlock();
