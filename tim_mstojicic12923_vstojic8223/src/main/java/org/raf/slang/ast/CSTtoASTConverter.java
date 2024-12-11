@@ -3,6 +3,7 @@ package org.raf.slang.ast;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.raf.slang.Slang;
 import slang.parser.SlangParser;
@@ -18,7 +19,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public CSTtoASTConverter(Slang slang) {
         this.slang = slang;
         /* Open the global scope.  */
-        openBlock();
+        //openBlock();
     }
 
     /* A stack of environments.  */
@@ -31,6 +32,12 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     /** Removes the last scope. */
     private void closeBlock() {
         environments.removeLast();
+    }
+    public void firstOpen(){
+        openBlock();
+    }
+    public void lastClose(){
+        closeBlock();
     }
 
     /** Saves a declaration into the current environment, diagnosing
@@ -134,8 +141,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+        var ifstatement = new IfStatement(getLocation(ctx), exprList, statementList);
         closeBlock();
-        return new IfStatement(getLocation(ctx), exprList, statementList);
+        return ifstatement;
     }
 
     @Override
@@ -154,6 +162,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     @Override
     public Tree visitLoopStatement(SlangParser.LoopStatementContext ctx) {
         openBlock();
+        var name = ctx.ID().getLast().getText();
+        Expr value = null;
+        if (ctx.expr(0) != null) {
+            value = (Expr) visit(ctx.expr(0));
+        }
+        var simpleStatement = new SimpleStatement(getLocation(ctx), name, value);
+        pushStatement(name, simpleStatement);
         var exprList = ctx.expr()
                 /* Take all the parsed arguments, ... */
                 .stream()
@@ -163,14 +178,15 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Expr) x)
                 /* ... and put them into a list.  */
                 .toList();
-
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
                 .map(x -> (Statement) x)
                 .toList();
+        var loopStatement = new LoopStatement(getLocation(ctx), exprList, statementList);
         closeBlock();
-        return new LoopStatement(getLocation(ctx), exprList, statementList);
+
+        return loopStatement;
     }
 
     @Override
@@ -285,9 +301,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
         var operatorText = ctx.getChild(1).getText();
         Expr.Operation exprOp;
-        if(operatorText == "+")
+        if(Objects.equals(operatorText, "+"))
             exprOp = Expr.Operation.ADD;
-        else if(operatorText == "-")
+        else if(Objects.equals(operatorText, "-"))
             exprOp = Expr.Operation.SUB;
         else
             throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
@@ -307,9 +323,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
         var operatorText = ctx.getChild(1).getText();
         Expr.Operation exprOp;
-        if(operatorText == "*")
+        if(Objects.equals(operatorText, "*"))
             exprOp = Expr.Operation.MUL;
-        else if(operatorText == "/")
+        else if(Objects.equals(operatorText, "/"))
             exprOp = Expr.Operation.DIV;
         else
             throw new IllegalArgumentException("Nepoznati operator: " + operatorText);
