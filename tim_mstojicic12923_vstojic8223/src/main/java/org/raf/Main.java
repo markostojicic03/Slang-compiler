@@ -67,14 +67,14 @@ public class Main {
             System.out.print("> ");
             String line = reader.readLine();
 
-            if (line == null || line.equalsIgnoreCase("exit")) {
+            if (line == null || line.equalsIgnoreCase("exit")){
                 break;
             }
-
 
             slang.setHadError(false);
             slang.setHadRuntimeError(false);
             run(CharStreams.fromString(line));
+           // treeProcessor.finalClose();
         }
     }
 
@@ -95,8 +95,9 @@ public class Main {
 
         System.out.println("AST:");
         var pp = new ASTNodePrinter(System.out);
+        treeProcessor.firstOpen();
         var program = (StatementList) tree.accept(treeProcessor);
-
+        treeProcessor.lastClose();
         program.nodePrint(pp);
     }
 
