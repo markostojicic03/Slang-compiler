@@ -1,7 +1,11 @@
 package org.raf.slang.ast;
 
-import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.util.List;
+@Getter
+@Setter
 public class FunctionDefinition extends Statement{
 
 

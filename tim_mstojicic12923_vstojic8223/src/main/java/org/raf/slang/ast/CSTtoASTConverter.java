@@ -24,6 +24,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
     /* A stack of environments.  */
     private List<Map<String, Statement>> environments = new ArrayList<>();
+
+    private List<FunctionDefinition> functionDefinitions = new ArrayList<>();
+
     /** Open a new scope. */
     private void openBlock() {
         environments.add(new HashMap<>());
@@ -33,7 +36,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     private void closeBlock() {
         environments.removeLast();
     }
-    public boolean isNumber(String str) {
+    private boolean isNumber(String str) {
         try {
             Double.parseDouble(str); // Za decimalne brojeve
             return true;
@@ -47,6 +50,15 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     public void lastClose(){
         closeBlock();
     }
+
+    private boolean functionDefined(String functionName){
+        for(FunctionDefinition functionFromList : functionDefinitions){
+            if(functionFromList.getName().equals(functionName))
+                return true;
+        }
+        return false;
+    }
+
 
     /** Saves a declaration into the current environment, diagnosing
      redeclaration. */
@@ -298,7 +310,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }
         else textReturnType = functionReturnType.getText();
         var function = new FunctionDefinition(getLocation(ctx), name,textReturnType ,parameterList, statementList);
-
+        if(functionDefined(function.getName()))
+            slang.error(getLocation(ctx), "function with this id already exist");
+        else functionDefinitions.add(function);
         closeBlock();
         return function;
     }
@@ -329,7 +343,22 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 .map(x -> (Expr) x)
                 /* ... and put them into a list.  */
                 .toList();
-        return new FunctionCallStatement(getLocation(ctx), name,exprList);
+
+        var functionCall = new FunctionCallStatement(getLocation(ctx), name,exprList);
+        if(!functionDefined(name))
+            slang.error(getLocation(ctx), "function with this id does not exist");
+        else{
+            // provera da li je poslat odgovarajuci broj argumenata(ovde samo proveravamo broj, a u tipizaciji cemo proveriti da li su dobri tipovi argumenata)
+            for(FunctionDefinition functionDefinition : functionDefinitions){
+                if(functionDefinition.getName().equals(name)){
+                    if(functionDefinition.getParameters().size() != functionCall.getArguments().size()){
+                        slang.error(getLocation(ctx), "function does not have correct number of arguments");
+                    }
+                }
+            }
+        }
+
+        return functionCall;
     }
 
     @Override

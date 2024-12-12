@@ -41,7 +41,7 @@ public class SimpleStatement extends Statement{
     public String toString() {
         return "declaration of variable(simple statement){" +
                 "name='" + name + '\'' +
-                ", value=" + value.toString() +
+                ", value=" + ((value != null) ? value.toString(): "null") +
                 ", type=" + type +
                 '}';
     }

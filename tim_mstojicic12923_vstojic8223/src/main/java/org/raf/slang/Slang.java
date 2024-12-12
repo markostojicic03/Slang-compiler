@@ -76,8 +76,12 @@ public class Slang {
  * grabmsg(vidan); ne nalazi vidana
  * numero vidan; grabmsg(vidan);
  *
- * TESTOVI ZA CALLFANC
- *
+ * TESTOVI ZA CALLFUNC
+ * Definisana funkcija i poziv funkcije - action numero proba(numero broj1, numero broj2){ numero primer = broj1; numero i; replay(primer > broj2){i = broj1;} getback i;} proba(2,10);  -- ne izbacuje gresku
+ * Definisana funkcija i poziv funkcije sa vise argumenata nego sto treba - action numero proba(numero broj1, numero broj2){ numero primer = broj1; numero i; replay(primer > broj2){i = broj1;} getback i;} proba(2,10,15,25,30);  -- izbacuje error zbog argumenata
+ * Definisana funkcija i poziv funkcije sa manje argumenata nego sto treba - action numero proba(numero broj1, numero broj2){ numero primer = broj1; numero i; replay(primer > broj2){i = broj1;} getback i;} proba(2);  -- izbacuje error zbog argumenata
+ * probaa(55); - izbacuje error jer funkcija nije nigde definisana
+ * action numero proba(numero broj1, numero broj2){ numero marko = 1; getback marko; }action numero proba(numero broj1, numero broj2){numero marko = 1; getback marko;} --- izbacuje error jer je dva puta definisana funkcija sa istim nazivom
  * */
 
 
