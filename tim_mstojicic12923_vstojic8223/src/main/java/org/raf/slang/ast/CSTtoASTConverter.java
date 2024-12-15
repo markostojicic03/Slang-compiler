@@ -256,19 +256,20 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         if (ctx.children.toString().contains("numero"))
             type = new NumberType(getLocation(ctx), ctx.children.get(2).toString());
         else
-            new VoidType(getLocation(ctx), "null");
+            type = new VoidType(getLocation(ctx), "null");
        //     type.setTypeName(ctx.children.get(2).toString());
         var simpleStatement = new SimpleStatement(getLocation(ctx), name, value, type);
         pushStatement(name, simpleStatement);
         var exprList = ctx.expr()
-                /* Take all the parsed arguments, ... */
                 .stream()
-                /* ... visit them using this visitor, ... */
                 .map(this::visit)
-                /* ... then cast them to expressions, ...  */
                 .map(x -> (Expr) x)
-                /* ... and put them into a list.  */
                 .toList();
+        if (ctx.children.get(2).toString().equals("numero")){
+            lookup(getLocation(ctx), ctx.children.get(7).toString());
+        }else
+            lookup(getLocation(ctx), ctx.children.get(3).toString());
+
         var statementList = ctx.statement()
                 .stream()
                 .map(this::visit)
