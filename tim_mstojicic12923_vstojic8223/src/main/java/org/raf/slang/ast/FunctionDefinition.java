@@ -13,7 +13,7 @@ public final class FunctionDefinition extends Statement{
     private String functionReturnType;
     private List<FunctionParameter> parameters;
     private List<Statement> statementList;
-    private String typeOfReturnData;
+    private String typeOfReturnData; // tip podatka koji je stavljen uz getback
 
 
     public FunctionDefinition(Location location, String name,String functionReturnType,List<FunctionParameter> arguments,List<Statement> statementList ) {

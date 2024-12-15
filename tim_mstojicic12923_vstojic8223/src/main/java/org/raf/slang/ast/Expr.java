@@ -64,10 +64,16 @@ public class Expr extends Tree{
         this.operation = Operation.VALUE;
     }
 
-    protected Expr(Location location, Expr expr,Operation operation)
+    protected Expr(Location location, Expr subexpr)
     {
         super(location);
-        this.lhs = expr;
+        this.lhs = subexpr;
+        this.operation = subexpr.getOperation();
+    }
+    protected Expr(Location location, Expr subexpr, Operation operation)
+    {
+        super(location);
+        this.lhs = subexpr;
         this.operation = operation;
     }
 

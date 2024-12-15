@@ -40,14 +40,21 @@ public class TypeCheck {
             }
             case IfStatement stmt -> {
                 var exprList = stmt.getExprList();
-                var variable = exprList.get(0);
-                for (Expr expr: exprList){
-                    expr = typecheck(expr);
-                    typecheck(expr);
-                    System.out.println(expr);
+                for (Expr expr2: exprList){
+                    typecheck(expr2);
+                   // typecheck(expr2);
+              //      System.out.println(expr);
                 }
-                Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(1));
-                Expr.Operation op;
+                Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(0));
+                int j = 0;
+                for(int i = 0; i < exprList.size(); i++){
+                    if(!tryAndConvert(exprList.get(j).getResultType(), exprList.get(i)).getResultType().getTypeName().equals(expr.getResultType().getTypeName())){
+                        slang.error(stmt.getLocation(), "GRESKAA, NISU ISTI TIPOVII");
+                    }
+
+                }
+                //Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(0));
+                //Expr.Operation op;//treba ispraviti hardkodovano
 
                 List<Statement> listOfStatements = stmt.getStatementList();
                 StatementList statementList = new StatementList(stmt.getLocation(),listOfStatements);
@@ -69,7 +76,6 @@ public class TypeCheck {
                 typecheck(statementList);
             }
             case FunctionDefinition stmt -> {
-                var parameterList = stmt.getParameters();
                 var functioReturnType = stmt.getFunctionReturnType();
                 if(!functioReturnType.equals(stmt.getTypeOfReturnData())){
                     slang.error(stmt.getLocation(), "type of returned data is not correct");
@@ -101,6 +107,11 @@ public class TypeCheck {
 
     private Expr typecheck(Expr expr_) {
         /* A few expressions are subclasses.  Check those separately.  */
+        if(expr_.getOperation().equals(Expr.Operation.BANG)){
+            expr_.setResultType(slang.getBoolType());
+            expr_ = expr_.getLhs();
+        }
+
         switch (expr_) {
             case ErrorExpr expr -> {
                 /* Something went wrong.  Make up a result.  */
@@ -163,7 +174,6 @@ public class TypeCheck {
             /* Checked below.  */
             }
             }
-
             /* We have a regular expression here.  */
             switch (expr_.getOperation()) {
                 case ADD, DIV, MUL, CARET, SUB,
@@ -214,6 +224,12 @@ public class TypeCheck {
                     expr.getResultType().userReadableName(),
                     to.userReadableName());
             expr = new ErrorExpr(null);
+            expr.setResultType(new VariableType(expr.getLocation(), "ErrorType") {
+                @Override
+                public String userReadableName() {
+                    return "Error";
+                }
+            });
         }
 
         return expr;

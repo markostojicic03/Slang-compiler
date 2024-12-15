@@ -405,6 +405,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         if (ctx.getParent().children.toString().contains("!")) {
             exprOp = Expr.Operation.BANG;
             var loc = subexpr.getLocation().span(subexpr.getLocation());
+            //subexpr.setOperation(exprOp);
             return new Expr(loc, subexpr, exprOp);
         }
 
