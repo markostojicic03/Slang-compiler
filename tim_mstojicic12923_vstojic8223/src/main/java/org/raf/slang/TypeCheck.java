@@ -25,25 +25,22 @@ public class TypeCheck {
             case SimpleStatement stmt -> {
             /*The type of the left-hand side of a 'let' statement is the same
             as the type of the right-hand side.  This is type deduction.*/
-                var type = stmt.getType();
-                //
                 Expr newValue;
-                if (typecheck(stmt.getValue()) != null){
-                    newValue = stmt.getValue();
-                    stmt.setValue(tryAndConvert(stmt.getType(),newValue));
-                    stmt.setType(newValue.getResultType());//proveriti da li je ovo tacno
+                if (stmt.getValue() != null){
+                    if (typecheck(stmt.getValue()) != null){
+                        newValue = stmt.getValue();
+                        stmt.setValue(tryAndConvert(stmt.getType(),newValue));
+                        stmt.setType(newValue.getResultType());
+                    }
                 }
 
 
-                //stmt.setValue(newValue);
 
             }
             case IfStatement stmt -> {
                 var exprList = stmt.getExprList();
                 for (Expr expr2: exprList){
                     typecheck(expr2);
-                   // typecheck(expr2);
-              //      System.out.println(expr);
                 }
                 Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(0));
                 int j = 0;
@@ -53,8 +50,6 @@ public class TypeCheck {
                     }
 
                 }
-                //Expr expr = tryAndConvert(exprList.get(0).getResultType(), exprList.get(0));
-                //Expr.Operation op;//treba ispraviti hardkodovano
 
                 List<Statement> listOfStatements = stmt.getStatementList();
                 StatementList statementList = new StatementList(stmt.getLocation(),listOfStatements);
@@ -110,10 +105,13 @@ public class TypeCheck {
 
     private Expr typecheck(Expr expr_) {
         /* A few expressions are subclasses.  Check those separately.  */
-        if(expr_.getOperation().equals(Expr.Operation.BANG)){
-            expr_.setResultType(slang.getBoolType());
-            expr_ = expr_.getLhs();
+        if (expr_.getOperation()!=null){
+            if(expr_.getOperation().equals(Expr.Operation.BANG)){
+                expr_.setResultType(slang.getBoolType());
+                expr_ = expr_.getLhs();
+            }
         }
+
 
         switch (expr_) {
             case ErrorExpr expr -> {
@@ -176,7 +174,6 @@ public class TypeCheck {
                 return expr;
             }
             case Expr expr -> {
-                //ovde dodati za bang 
             /* Checked below.  */
             }
             }
@@ -185,7 +182,7 @@ public class TypeCheck {
                 case ADD, DIV, MUL, CARET, SUB,
                         MOD, BITAND, BITOR, OR, AND, NOTEQUAL,
                         EQUALTO, GREATERTHAN, GREATERTHANOREQ,
-                        LESSTHAN, LESSTHANOREQ-> {// dodati ovde i ostale operacije
+                        LESSTHAN, LESSTHANOREQ-> {
 
             /* Binary number expressions.  */
             expr_.setLhs(typecheck(expr_.getLhs()));
@@ -207,7 +204,12 @@ public class TypeCheck {
                         slang.error(expr_.getLocation(),
                                 "cannot use a value of type '%s' where type bool is needed",
                                 expr_.getResultType().userReadableName());
-                        //treba dodati sta u ovom slucaju da bude expr
+                        expr_.setResultType(new VariableType(expr_.getLocation(), "ErrorType") {
+                            @Override
+                            public String userReadableName() {
+                                return "Error";
+                            }
+                        });
                     }else{
                         expr_.setResultType(slang.getBoolType());
                     }
