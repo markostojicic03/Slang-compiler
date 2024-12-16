@@ -25,6 +25,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
     private List<Map<String, Statement>> environments = new ArrayList<>();
 
     private List<FunctionDefinition> functionDefinitions = new ArrayList<>();
+    private List<ArrayStatement> arrays = new ArrayList<>();
 
     /** Open a new scope. */
     private void openBlock() {
@@ -58,6 +59,14 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         return false;
     }
 
+    private ArrayStatement arrayDefined(String arrayName){
+        for(ArrayStatement arrayFromList : arrays){
+            if(arrayFromList.getName().equals(arrayName))
+                return arrayFromList;
+        }
+        return null;
+    }
+
 
     /** Saves a declaration into the current environment, diagnosing
      redeclaration. */
@@ -88,7 +97,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         }
 
         if (oldDecl != null) {
-            slang.error(statement.getLocation(), "");
+            slang.error(statement.getLocation(), "variable with this id is already defined");
         }
     }
     /**Prolazi kroz envirionments i trazi da li ima neki simpleStatement sa istim imenom*/
@@ -99,7 +108,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
                 if (statement instanceof SimpleStatement) {
                     SimpleStatement simpleStatement = (SimpleStatement) statement;
                     if (simpleStatement.getName().equals(name)) {
-                        return simpleStatement; // Pronađeno, vraćamo true
+                        return simpleStatement;
                     }
                 }
             }
@@ -196,12 +205,9 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         else if(typeName.equals("yeahNah")){
             return new BoolType(getLocation(ctx), typeName);
         }
-        else if(typeName.equals("squad numero[]")){// PROVERITI DA LI JE OVDE POTREBNO NESTO STAVITI IZMEDJU ZAGRADA
-            return new ArrayType(getLocation(ctx), typeName);
-        }
         else{
             slang.error(getLocation(ctx), "type is not valid");
-            return null;
+            return new ErrorExpr(getLocation(ctx));
         }
 
     }
@@ -231,7 +237,13 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
         ArrayStatement array = new ArrayStatement(getLocation(ctx), name, arrayLiteral, type);
         if(sizeOfArray != -1){
             array.setSizeOfArray(sizeOfArray);
+            arrayLiteral.setSizeOfArray(sizeOfArray);
         }
+        else{
+            array.setSizeOfArray(array.getElements().getElements().size());
+            arrayLiteral.setSizeOfArray(array.getElements().getElements().size());
+        }
+        this.arrays.add(array);
         pushStatement(name, array);
         return array;
     }
@@ -532,7 +544,26 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             return new NumberLiteral(getLocation(ctx), Double.parseDouble(ctx.getText()));
         }else if(ctx.BOOLEAN_LITERAL()!=null && ctx.getText().equals(ctx.BOOLEAN_LITERAL().toString())){
             return new BoolLiteral(getLocation(ctx), Boolean.parseBoolean(ctx.getText()));
-        }else {
+        }
+        else if(ctx.ID() != null && ctx.getText().contains("[") && ctx.getText().contains("]") && ctx.NUMBER_LITERAL() != null){
+            var arrayName = ctx.ID().getText();
+            var wantedIndex = Integer.parseInt(ctx.NUMBER_LITERAL().getText());
+            ArrayStatement array = arrayDefined(arrayName);
+            if(array != null){
+                if(array.getSizeOfArray() - 1 >= wantedIndex){
+                    return array.getElements().getElements().get(wantedIndex);
+                }
+                else{
+                    slang.error(getLocation(ctx), "index out of bounds");
+                    return new ErrorExpr(getLocation(ctx));
+                }
+            }
+            else{
+                slang.error(getLocation(ctx), "array is not defined");
+                return new ErrorExpr(getLocation(ctx));
+            }
+        }
+        else {
             var loc = getLocation(ctx);
 
             String variableName = ctx.ID().getText();

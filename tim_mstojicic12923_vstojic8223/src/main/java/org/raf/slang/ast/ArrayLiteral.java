@@ -9,6 +9,7 @@ import java.util.List;
 public class ArrayLiteral extends Expr {
     private VariableType typeOfArray;
     private List<Expr> elements;
+    private int sizeOfArray = -1;
 
     protected ArrayLiteral(Location location, List<Expr> elements) {
         super(location);

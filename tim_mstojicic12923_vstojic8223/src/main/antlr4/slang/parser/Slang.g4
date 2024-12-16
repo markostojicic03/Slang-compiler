@@ -93,6 +93,7 @@ core
     : NUMBER_LITERAL
     | BOOLEAN_LITERAL
     | ID
+    | ID '['NUMBER_LITERAL ']'
     ;
 block: '{' statement* '}';
 

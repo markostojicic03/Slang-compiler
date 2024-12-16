@@ -132,6 +132,9 @@ public class TypeCheck {
                 return expr;
             }
             case ArrayLiteral expr -> {
+                if(expr.getSizeOfArray() != -1){
+                    if(expr.getSizeOfArray() < expr.getElements().size()) slang.error(expr.getLocation(), "the array has exceeded its defined size");
+                }
                 /* We need to type check each of the arguments.  */
                 for (int i = 0; i < expr.getElements().size(); i++) {
                     /* Type-check and apply any conversions.  */
