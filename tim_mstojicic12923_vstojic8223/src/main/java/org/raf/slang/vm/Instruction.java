@@ -19,6 +19,7 @@ public final class Instruction {
         PUSHI (1),// dodajemo neku brojcanu vrednost na stek
         PUSH_FUNC (1), // dodajemo pokazivac neke funkcije na stek
         RET,// signalizira kraj izvrsavanja neke funkcije
+        RET_VOID,
         CALL (1), // ako imamo npr f(a,b,c) onda ceo reci CALL(3) jer pozivamo funkciju sa 3 parametra
         SET_LOCAL (1),// ako imamo npr. x=5 onda treba da setujemo prom x vrednost
         GET_LOCAL(1), // uzimanje neke promenljive sa steka, ako imamo npr print(x);
@@ -55,6 +56,8 @@ public final class Instruction {
         // Upvalue handling.
         GET_UPVALUE(1),
         PRINT,
+        FINISH_OUTER,
+        BUILD_CLOSURE(1),  // Generate a closure for a function
         EXIT,
         PUTC,
         ;

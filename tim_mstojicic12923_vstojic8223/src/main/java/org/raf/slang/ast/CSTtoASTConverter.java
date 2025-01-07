@@ -376,9 +376,17 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
 
         var dataForReturn = ctx.ID().getLast().getText();
         SimpleStatement foundSimpleStatement = findSimpleStatement(dataForReturn);
+        Expr savedValueOfReturnedData = null;
         if(dataForReturn != null && (dataForReturn != "true" && dataForReturn != "false" && !isNumber(dataForReturn))  && !dataForReturn.equals(name)   ){
-            if(foundSimpleStatement == null) slang.error(getLocation(ctx), "returned variable doesn not exist");
+            if(foundSimpleStatement == null){
+                slang.error(getLocation(ctx), "returned variable doesn not exist");
+            }
+            else{
+                savedValueOfReturnedData = findSimpleStatement(dataForReturn).getValue();
+            }
+
         }
+
         var functionReturnType = ctx.variableType();
         String textReturnType = "";
         if(functionReturnType == null){
@@ -388,8 +396,11 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             }
             else textReturnType = emptyReturn.getText();
         }
-        else textReturnType = functionReturnType.getText();
+        else{
+            textReturnType = functionReturnType.getText();
+        }
         var function = new FunctionDefinition(getLocation(ctx), name,textReturnType ,parameterList, statementList);
+        if(savedValueOfReturnedData != null)function.setValueOfReturnData(savedValueOfReturnedData);
         if(foundSimpleStatement != null) function.setTypeOfReturnData(foundSimpleStatement.getType().getTypeName());
         else if(ctx.NUMBER_LITERAL() != null){
             if(isNumber(ctx.NUMBER_LITERAL().getText())){
@@ -445,12 +456,21 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             slang.error(getLocation(ctx), "function with this id does not exist");
         else{
             // provera da li je poslat odgovarajuci broj argumenata(ovde samo proveravamo broj, a u tipizaciji cemo proveriti da li su dobri tipovi argumenata)
+            boolean flagForArgSize = false;
             for(FunctionDefinition functionDefinition : functionDefinitions){
                 if(functionDefinition.getName().equals(name)){
                     if(functionDefinition.getParameters().size() != functionCall.getArguments().size()){
                         slang.error(getLocation(ctx), "function does not have correct number of arguments");
+                        flagForArgSize = true;
                     }
                     functionCall.setDefinition(functionDefinition);
+                }
+            }
+            if(!flagForArgSize){
+                int i = 0;
+                for(FunctionParameter functionParameterEl : functionCall.getDefinition().getParameters()){
+                    functionParameterEl.setValueOfParameter(functionCall.getArguments().get(i));
+                    i++;
                 }
             }
         }

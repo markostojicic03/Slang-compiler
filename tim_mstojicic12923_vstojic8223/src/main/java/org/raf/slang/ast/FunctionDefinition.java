@@ -14,6 +14,7 @@ public final class FunctionDefinition extends Statement{
     private List<FunctionParameter> parameters;
     private List<Statement> statementList;
     private String typeOfReturnData; // tip podatka koji je stavljen uz getback
+    private Expr valueOfReturnData = null;
 
 
     public FunctionDefinition(Location location, String name,String functionReturnType,List<FunctionParameter> arguments,List<Statement> statementList ) {

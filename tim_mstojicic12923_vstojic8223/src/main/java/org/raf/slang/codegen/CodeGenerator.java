@@ -8,11 +8,10 @@ package org.raf.slang.codegen;
 import lombok.Getter;
 import org.raf.slang.Slang;
 import org.raf.slang.ast.*;
-import org.raf.slang.vm.Instruction;
-import org.raf.slang.vm.IpInstruction;
-import org.raf.slang.vm.UpvalueMapEntry;
+import org.raf.slang.vm.*;
 
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Stack;
 
@@ -25,7 +24,7 @@ public class CodeGenerator {
     private Stack<List<IpInstruction>> continueStmts = new Stack<>();
     private Stack<List<IpInstruction>> exitStmts = new Stack<>();
 
-    private InTranslationBytecodeContainer bytecodeContainer;
+    private InTranslationBytecodeContainer bytecodeContainer = null;
 
     private final Slang slang;
   //  private final IdentityHashMap<FunctionDefinition, Integer> functionLUT;
@@ -36,15 +35,66 @@ public class CodeGenerator {
         this.slang = slang;
         // this.functionLUT...
     }
+    /** Compiles a single global scope statement list and produces a blob of
+     code for it that the VM can interpret immediately.  Populates the
+     function table if a function is declared within {@code input}.  */
+    public BytecodeContainer compileInput(StatementList input) {
+        assert !(slang.hadError() || slang.hadRuntimeError());
+        /* This function should only be called for the global scope.  */
+        assert bytecodeContainer == null;
+        var outerBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
+                null,
+                null,
+                bytecodeContainer);
+        /* Push.  */
+        bytecodeContainer = outerBlob;
 
+        compileBlock(input);
+        /* Used as a signal to our VM that we're done with the blob.  */
+        emit(Instruction.Code.FINISH_OUTER);
+
+        /* We must've come back down to the bottom of the stack.  */
+        assert bytecodeContainer == outerBlob;
+        bytecodeContainer = null;
+
+        /* There can't possibly be any locals here.  */
+        assert outerBlob.getMaxLocalDepth() == 0;
+        return outerBlob.getCode();
+    }
+
+    private void compileBlock(StatementList input) {
+        var currentBlob = bytecodeContainer;
+        var oldLocalDepth = currentBlob.getLocalDepth();
+
+        for (var statement : input.getListOfStatements())
+            compileStatement(statement);
+
+        bytecodeContainer.setLocalDepth(oldLocalDepth);
+        assert currentBlob == bytecodeContainer;
+    }
+
+
+    private Instruction declareVariable(SimpleStatement declaration) {
+        if (bytecodeContainer.getPreviousBlob() == null) {
+            /* New global variable.  */
+            return new Instruction(Instruction.Code.SET_GLOBAL, slang.declareGlobal(declaration));
+        } else {
+            var newVarId = bytecodeContainer.getLocalDepth();
+            bytecodeContainer.setLocalDepth(newVarId + 1);
+            var oldId = bytecodeContainer.getLocalSlots().put(declaration, newVarId);
+            assert oldId == null : "how did you redeclare it??";
+            return new Instruction(Instruction.Code.SET_LOCAL, newVarId);
+        }
+    }
 
 
     private void compileStatement(Statement statement) {
         switch(statement)
         {
             case SimpleStatement simpleStmt -> {
-                compileSimpleStatement(simpleStmt);
-                 emit(Instruction.Code.POP);
+                var newVarSetter = declareVariable(simpleStmt);
+                compileExpr(simpleStmt.getValue());
+                emit(newVarSetter);
             }
             case IfStatement ifStmt -> {
                 // ovde je napisano kako se izvrsava if u slucaju kada nema else
@@ -78,11 +128,65 @@ public class CodeGenerator {
                         });
             }
             case ScanStatement scanStmt -> {}
-            case FunctionDefinition functionDefinition -> {}
+            case FunctionDefinition functionDefinition -> {
+                VariableType variableType = new VariableType(functionDefinition.getLocation(), functionDefinition.getFunctionReturnType()) {
+                    @Override
+                    public String userReadableName() {
+                        return functionDefinition.getFunctionReturnType();
+                    }
+                };
+                var newVarSetter = declareVariable(new SimpleStatement(functionDefinition.getLocation(), functionDefinition.getName(), null,variableType));
+                var fnId = compileFunction(functionDefinition);
+                emit(Instruction.Code.BUILD_CLOSURE, fnId);
+                emit(newVarSetter);
+            }
             case FunctionCallStatement functionCallStatement -> {}
             case ArrayStatement arrayStmt -> {}
-            case StatementList listStmt -> {}
+            case StatementList listStmt -> {
+                compileBlock(listStmt);
+            }
         }
+    }
+
+    private int compileFunction(FunctionDefinition fn) {
+        var function = new Function();
+        function.setFuncDef(fn);
+        var functionBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
+                new IdentityHashMap<>(),
+                new IdentityHashMap<>(),
+                bytecodeContainer);
+        bytecodeContainer = functionBlob;
+        var newFnId = slang.addFunction(function);
+
+        /* Declare variables.  */
+        for (FunctionParameter functionParameter : fn.getParameters()) {
+            SimpleStatement simpleStatementFunctionPar = new SimpleStatement(functionParameter.getLocation(),functionParameter.getParamName(), functionParameter.getValueOfParameter(),functionParameter.getType());
+            declareVariable(simpleStatementFunctionPar);
+        }
+
+        /* Compile body.  */
+        compileBlock(new StatementList(fn.getLocation(), fn.getStatementList()));
+
+        /* Populate the function data.  */
+        function.setCode(functionBlob.getCode());
+        var upvals = new UpvalueMapEntry[functionBlob.getUpvalSlots().size()];
+        function.setUpvalueMap(upvals);
+        function.setLocalCount(functionBlob.getMaxLocalDepth());
+        functionBlob.getUpvalSlots()
+                .values()
+                .forEach(s -> { upvals[s.slotNr()] = s.entry(); });
+
+        /* Pop.  */
+        bytecodeContainer = bytecodeContainer.getPreviousBlob();
+
+        if (fn.getValueOfReturnData() != null) {
+            compileExpr(fn.getValueOfReturnData());
+            emit(Instruction.Code.RET);
+        } else
+            emit(Instruction.Code.RET_VOID);
+
+
+        return newFnId;
     }
 
 
@@ -120,10 +224,6 @@ public class CodeGenerator {
         return new Instruction(Instruction.Code.GET_UPVALUE, upvalSlot);
     }
 
-
-    private void compileSimpleStatement(SimpleStatement simpleStatement) {
-        compileExpr(simpleStatement.getValue());
-    }
 
     private Instruction getVarInsn(SimpleStatement decl) {
         return slang.getGlobalSlot(decl)

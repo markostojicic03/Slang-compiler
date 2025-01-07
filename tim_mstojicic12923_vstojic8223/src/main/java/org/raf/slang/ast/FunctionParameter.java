@@ -10,7 +10,7 @@ import java.util.Map;
 public class FunctionParameter extends Tree {
     private final String paramName;
     private final VariableType type;
-
+    private Expr valueOfParameter;
 
     public FunctionParameter(Location loc, String paramName, VariableType type) {
         super(loc);
