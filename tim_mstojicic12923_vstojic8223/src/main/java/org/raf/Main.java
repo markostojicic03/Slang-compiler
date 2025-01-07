@@ -29,7 +29,7 @@ public class Main {
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
     private static final CodeGenerator codeGenerator = new CodeGenerator(slang);
-   // private static final VM vm = new VM(slang);
+    private static final VM vm = new VM(slang);
 
     public static void main(String[] args) throws IOException {
         java.util.Scanner scanner = new java.util.Scanner(System.in);
@@ -115,7 +115,7 @@ public class Main {
         /* The compiler cannot emit errors.  */
         assert !slang.hadError();
 
-        //vm.run(bytecode);
+      //  vm.run(bytecode);
     }
 
 }
