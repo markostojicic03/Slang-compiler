@@ -5,7 +5,6 @@ package org.raf.slang.codegen;
 * Ova klasa ce kod sluziti za generisanje medjukoda, ona ce biti nalik javinom bytecode-u.
 * */
 
-import lombok.Getter;
 import org.raf.slang.Slang;
 import org.raf.slang.ast.*;
 import org.raf.slang.vm.*;
@@ -15,7 +14,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Stack;
 
-
+//numero br = 1; action numero pr(yeahNah flag, numero x, numero y){numero i = 0; check(flag == true){i = x;}backup{i = y;}getback i;} pr(true, 1, 2);
 public class CodeGenerator {
     // ovde je potrebno da stoji compile funkcija
 
@@ -75,8 +74,6 @@ public class CodeGenerator {
     private Instruction declareVariable(SimpleStatement declaration) {
         if (bytecodeContainer.getPreviousBlob() == null) {
             /* New global variable.  */
-            var newVarId = bytecodeContainer.getLocalDepth();
-            var oldId = bytecodeContainer.getLocalSlots().put(declaration, newVarId);
             return new Instruction(Instruction.Code.SET_GLOBAL, slang.declareGlobal(declaration));
         } else {
             var newVarId = bytecodeContainer.getLocalDepth();
@@ -102,7 +99,17 @@ public class CodeGenerator {
                 for (Expr expr : ifStmt.getExprList()) compileExpr(expr);
                 var skipThen = emit(Instruction.Code.JUMP_FALSE, Integer.MAX_VALUE);
                 emit(Instruction.Code.POP);
+                InTranslationBytecodeContainer ifBlob = null;
+                if (!ifStmt.getStatementList().isEmpty()){
+                    ifBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
+                            new IdentityHashMap<>(),// bytecodeContainer.getLocalSlots
+                            new IdentityHashMap<>(),
+                            bytecodeContainer);
+                    bytecodeContainer = ifBlob;
+                }
                 for (Statement statementEl : ifStmt.getStatementList()) compileStatement(statementEl);
+                /**POP**/
+                if (ifBlob != null) bytecodeContainer = bytecodeContainer.getPreviousBlob();
                 var skipPop = emit(Instruction.Code.JUMP, Integer.MAX_VALUE);
                 backpatch(skipThen);
                 emit(Instruction.Code.POP);
@@ -122,7 +129,17 @@ public class CodeGenerator {
                 continueStmts.push(new ArrayList<>());
                 exitStmts.push(new ArrayList<>());
 
+                InTranslationBytecodeContainer loopBlob = null;
+                if (!loopStmt.getStatementList().isEmpty()){
+                    loopBlob = new InTranslationBytecodeContainer(new BytecodeContainer(),
+                            new IdentityHashMap<>(),// bytecodeContainer.getLocalSlots
+                            new IdentityHashMap<>(),
+                            bytecodeContainer);
+                    bytecodeContainer = loopBlob;
+                }
                 for (Statement statementEl : loopStmt.getStatementList()) compileStatement(statementEl);
+                /**POP**/
+                if (loopBlob != null) bytecodeContainer = bytecodeContainer.getPreviousBlob();
                 emit(Instruction.Code.JUMP, jumpOffset(startIp));
 
                 for (var stmt : exitStmts.pop()) backpatch(stmt);
