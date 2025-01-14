@@ -49,7 +49,7 @@ public class Expr extends Tree{
             this.opCount = operationCount;
         }
     }
-
+    private VariableType resultType;
     private Operation operation;
     private List<Expr> operands;
     private Expr rhs;
