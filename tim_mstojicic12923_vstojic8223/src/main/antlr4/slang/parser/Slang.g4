@@ -1,143 +1,164 @@
 grammar Slang;
 
-// PARSERSKA GRAMATIKA
+options { visitor = true; }
 
-start
-    :  statement* EOF
-    ;
+start: topLevel* EOF;
+
+topLevel
+    : defineFunction ;
+
+defineFunction: FUNCTION IDENTIFIER '(' argumentList ')' ':' returnType = typeId (body = statementList) ;
+argumentList: (argument (',' argument)*)? ;
+argument: typeId IDENTIFIER ;
+
+statementList: '{' statement* '}' ;
 
 statement
-    : simpleStatement
-    | ifStatement
-    | elseStatement
-    | loopStatement
-    | printStatement
-    | scanStatement
-    | functionDefinition
-    | functionCallStatement
-    ;
-
-simpleStatement
-    : NUMBER_KEYWORD ID ('=' expr)? ';'
-    | BOOLEAN_KEYWORD ID ('=' expr)? ';'
-    | ID '=' expr ';'
-    | ARRAY_KEYWORD NUMBER_KEYWORD ID ('=' '(' expr(','expr)* ')' )?';'
-    ;
-
-ifStatement
-    : IF_KEYWORD '(' expr('<' | '>' | '<=' | '>=' | '==' | '&&' | '||' ) expr ')' '{'(statement)* '}'
-    ;
-
-elseStatement
-    : ELSE_KEYWORD '{'(statement)* '}'
+    : ifStatement
+    | whileStatement
+    | forStatement
+    | statementList
+    | assignment ';'
+    | returnStatement ';'
+    | loopControlStatement ';'
+    | nullStatement
+    | declareStatement ';'
     ;
 
 
-loopStatement
-    : FOR_KEYWORD '(' (NUMBER_KEYWORD ID '=' expr)? ';' ID ('<' | '>' | '<=' | '>=' | '&&' | '||') expr ';' (ID ('+' | '-' | '*' | '/') expr)? ')''{' (statement)* '}'
-    | WHILE_KEYWORD '(' ID ('<' | '>' | '<=' | '>='| '&&' | '||') expr  ')''{' (statement)* '}'
+declareStatement: typeId IDENTIFIER '=' value = expression ;
+returnStatement: RETURN expression? ;
+loopControlStatement: BREAK | CONTINUE ;
+nullStatement: ';' ;
+ifStatement: IF '(' expression ')' then = statement (ELSE otherwise = statement)? ;
+whileStatement: WHILE '(' expression ')' body = statement ;
+forStatement: FOR '(' declareStatement ';' expression ';' assignment ')' body = statement;
+
+assignment: expression ('=' expression)? ;
+
+expression: orExpression ;
+orExpression: initial=andExpression (op+=LOGICAL_OR rest+=andExpression)* ;
+andExpression: initial=compareExpression (op+=LOGICAL_AND rest+=compareExpression)* ;
+compareExpression: initial=relationalExpression (op+=(EQ | NEQ) rest+=relationalExpression)* ;
+relationalExpression: initial=additionExpression (op+=(LT | LTE | GT | GTE) rest+=additionExpression)* ;
+additionExpression: initial=multiplicationExpression (op+=(PLUS | MINUS) rest+=multiplicationExpression)* ;
+multiplicationExpression: initial=unaryExpression (op+=(STAR | DIVIDE | MODUO) rest+=unaryExpression)* ;
+unaryExpression: unaryOp=(MINUS | LOGICAL_NOT)? unarySuffix;
+
+unarySuffix: term unarySuffixOp*;
+
+unarySuffixOp
+    : '(' args=expressionList ')' #Funcall
+    | '[' index=expression ']' #ArrIdx
+    | '?len' #ArrayLen
+    | '?new' #ArrayPush
+    ;
+
+term
+    : literal
+    | varRef
+    | arrayCollect
+    | '(' expression ')'
+    ;
+
+varRef: IDENTIFIER;
+expressionList: (expression (',' expression)*)?;
+
+arrayType
+    : ARR '[' typeId ']'
+    ;
+
+arrayCollect
+    : NEW typeId '{' collectedElems=expressionList '}'
+    ;
+
+typeId:
+    | INT_TYPE
+    | BOOL_TYPE
+    | VOID_TYPE
+    | CHAR_TYPE
+    | STRING_TYPE
+    | arrayType
+    ;
+
+literal
+    : NUMBER
+    | TRUE
+    | FALSE
+    | CHAR
+    | STRING
     ;
 
 
-functionDefinition
-    :  FUNCTION_KEYWORD ID '(' (expr? (',' expr)*?) ')' '{' (statement)* RETURN_KEYWORD (expr | VOID_KEYWORD) ';' '}' // ispraviti da budu tipovi za argumente
-    ;
+// Lexical Grammar
 
-functionCallStatement
-    : ID '(' (expr? (',' expr)*?) ')' ';'
-    ;
+// LOGICAL OPERATOR
+LOGICAL_NOT: '!';
+LOGICAL_OR: '||';
+LOGICAL_AND: '&&';
 
-printStatement
-    : PRINT_KEYWORD '(' expr(','expr)*')'';'
-    ;
+// Arithmetic Operators
+PLUS: '+';
+MINUS: '-';
+STAR: '*';
+DIVIDE: '/';
+MODUO: '%';
 
-scanStatement
-    : SCAN_KEYWORD '('ID')'';'
-    ;
+// Rational operators
+GT: '>';
+GTE: '>=';
+LT: '<';
+LTE: '<=';
+EQ: '==';
+NEQ: '!=';
 
-expr
-    : functionCallStatement
-    | expr (AND | OR) relationalOperands
-    | relationalOperands
-    ;
+// Unary operators
+INC: '++';
+DEC: '--';
 
-relationalOperands
-    : relationalOperands(GREATERTHAN | LESSTHAN | LESSTHANOREQ | GREATERTHANOREQ | EQUALTO) addSubOperands
-    | addSubOperands
-    ;
+// Assignment operators
+ASSIGN: '=';
+//PLUS_ASSIGN: '+=';
+//MINUS_ASSIGN: '-=';
+//STAR_ASSIGN: '*=';
+//DIVIDE_ASSIGN: '/=';
+//MODUO_ASSIGN: '%=';
 
-addSubOperands
-    : addSubOperands(ADD | SUB) mulDivOperands
-    | mulDivOperands
-    ;
+// Numbers
+NUMBER: '-'? (WHOLE | '0');
 
-mulDivOperands
-    : mulDivOperands(MUL | DIV) core
-    | core
-    ;
+// Types
+BOOL_TYPE: 'bool';
+INT_TYPE: 'int';
+CHAR_TYPE: 'char';
+VOID_TYPE: 'void';
+STRING_TYPE: 'string';
+ARR: 'arr';
 
-core
-    : NUMBER_LITERAL
-    | BOOLEAN_LITERAL
-    | ID
-    ;
+FOR: 'for';
+WHILE: 'while';
+BREAK: 'break';
+CONTINUE: 'continue';
+
+FUNCTION: 'fun';
+RETURN: 'return';
+NEW: 'new';
+
+IF: 'if';
+ELSE: 'else';
+TRUE: 'true';
+FALSE: 'false';
+
+IDENTIFIER: [a-zA-Z_][a-zA-Z0-9_]*;
+STRING: '"' STRELEM* '"';
+CHAR: '\'' STRELEM '\'';
 
 
-// LEKSICKA GRAMATIKA
+// Helper fragments
+fragment STRELEM: (~[\\'"\n] | '\\' ~[\n]);
+fragment WHOLE: [1-9] [0-9]*;
 
-IF_KEYWORD: 'check';
-ELSE_KEYWORD: 'backup';
-FOR_KEYWORD: 'spin';
-WHILE_KEYWORD: 'replay';
-NUMBER_KEYWORD: 'numero';
-BOOLEAN_KEYWORD: 'yeahNah';
-RETURN_KEYWORD: 'getback';
-VOID_KEYWORD: 'empty';
-ARRAY_KEYWORD: 'squad';
-PRINT_KEYWORD: 'dropmsg';
-SCAN_KEYWORD: 'grabmsg';
-FUNCTION_KEYWORD: 'action';
-// LITERALS
-BOOLEAN_LITERAL: 'true' | 'false';
-NUMBER_LITERAL: ('-')? [0-9]+ ('.' [0-9]+)?;
-
-// Separators
-
-LPAREN : '(';
-RPAREN : ')';
-LBRACE : '{';
-RBRACE : '}';
-LBRACK : '[';
-RBRACK : ']';
-SEMI   : ';';
-COMMA  : ',';
-DOT    : '.';
-
-// Operators
-
-ASSIGN   : '=';
-GREATERTHAN       : '>';
-LESSTHAN       : '<';
-BANG     : '!';
-COLON    : ':';
-EQUALTO    : '==';
-LESSTHANOREQ       : '<=';
-GREATERTHANOREQ       : '>=';
-NOTEQUAL : '!=';
-AND      : '&&';
-OR       : '||';
-ADD      : '+';
-SUB      : '-';
-MUL      : '*';
-DIV      : '/';
-BITAND   : '&';
-BITOR    : '|';
-MOD      : '%';
-CARET    : '^';
-// IDENTIFIERS
-ID : [a-zA-Z] [a-zA-Z0-9]* ; // match usual identifier spec
-
-// COMMENTS AND SPACES
+// Skipp following
 SPACES: [ \u000B\t\r\n\p{White_Space}] -> skip;
 COMMENT: '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
