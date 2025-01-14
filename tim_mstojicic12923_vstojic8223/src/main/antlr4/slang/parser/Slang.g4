@@ -31,7 +31,9 @@ array
     : ARRAY_KEYWORD variableType ID '[' (NUMBER_LITERAL)?']' '=' '{' expr (','expr)* '}'';'
     ;
 
-ifStatement: IF_KEYWORD '(' expr ')' then = statement (ELSE_KEYWORD otherwise = statement)? ;
+ifStatement
+    : IF_KEYWORD '(' (expr)+ ')' '{' (statement)* '}'
+    ;
 
 elseStatement
     : ELSE_KEYWORD '{'(statement)* '}'
