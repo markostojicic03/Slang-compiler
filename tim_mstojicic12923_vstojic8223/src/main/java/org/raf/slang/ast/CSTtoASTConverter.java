@@ -195,7 +195,7 @@ public class CSTtoASTConverter extends AbstractParseTreeVisitor<Tree> implements
             }
             else{
                 //moze da se ispravi da se ne azurira vrednost
-                foundSimpleStatement.setValue(simpleStatement.getValue());
+//                foundSimpleStatement.setValue(simpleStatement.getValue());
                 simpleStatement = foundSimpleStatement;
             }
         }

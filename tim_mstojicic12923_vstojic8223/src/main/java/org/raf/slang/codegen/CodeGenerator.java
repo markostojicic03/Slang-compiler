@@ -370,17 +370,36 @@ public class CodeGenerator {
                         });
                     }
                     case GREATERTHAN, LESSTHAN,
-                            EQUALTO, LESSTHANOREQ, GREATERTHANOREQ -> {
+                            LESSTHANOREQ, GREATERTHANOREQ -> {
                         relationalOperands(binaryExpr);
                         emit(switch (binaryExpr.getOperation()) {
                             case GREATERTHAN -> Instruction.Code.BIT_GT;
                             case LESSTHAN -> Instruction.Code.BIT_LT;
                             case LESSTHANOREQ -> Instruction.Code.BIT_LTE;
-                            case EQUALTO -> Instruction.Code.BIT_ET;
                             case GREATERTHANOREQ -> Instruction.Code.BIT_GTE;
                             default ->
                                     throw new IllegalStateException("Unexpected value: " + binaryExpr.getOperation());
                         });
+                    }
+                    case NOT_EQUALS, EQUALTO -> {
+                        int flag = 0;
+                        if (binaryExpr.getOperands()!= null){
+                            for (Expr expr1: binaryExpr.getOperands()) {
+                                if (expr1.getResultType().equals(slang.getBoolType())){
+                                    flag = 1;
+                                    break;
+                                }
+                            }
+                            if (flag == 1){
+                                trueOrFalse(binaryExpr);
+                            }else {
+                                relationalOperands(binaryExpr);
+                            }
+                        }else {
+                            if (binaryExpr.getResultType().equals(slang.getBoolType()))
+                                trueOrFalse(binaryExpr);
+                            else relationalOperands(binaryExpr);
+                        }
                     }
                     case BANG -> {
                         BoolLiteral boolExpr = (BoolLiteral) expr.getOperands().get(0);
@@ -425,7 +444,7 @@ public class CodeGenerator {
                         return boolRhs;
                 }
             }
-        }else {
+        }else if (expr.getOperation().equals(Expr.Operation.OR)){
             Expr lhs = expr.getOperands().get(0);
             if (lhs.getOperands() != null)
                 lhs = trueOrFalse(lhs);
@@ -438,6 +457,42 @@ public class CodeGenerator {
                 boolean rhsValue = boolRhs.isBool();
                 boolean lhsValue = boolLhs.isBool();
                 if (rhsValue || lhsValue){
+                    if (rhsValue) return boolRhs;
+                    else return boolLhs;
+                }
+                else return boolRhs;
+            }
+        } else if (expr.getOperation().equals(Expr.Operation.EQUALTO)) {
+            Expr lhs = expr.getOperands().get(0);
+            if (lhs.getOperands() != null)
+                lhs = trueOrFalse(lhs);
+            Expr rhs = expr.getOperands().get(1);
+            if (rhs.getOperands() != null)
+                rhs = trueOrFalse(rhs);
+            if (rhs instanceof BoolLiteral && lhs instanceof BoolLiteral){
+                BoolLiteral boolRhs = (BoolLiteral) rhs;
+                BoolLiteral boolLhs = (BoolLiteral) lhs;
+                boolean rhsValue = boolRhs.isBool();
+                boolean lhsValue = boolLhs.isBool();
+                if (rhsValue == lhsValue){
+                    if (rhsValue) return boolRhs;
+                    else return boolLhs;
+                }
+                else return boolRhs;
+            }
+        } else if (expr.getOperation().equals(Expr.Operation.NOT_EQUALS)) {
+            Expr lhs = expr.getOperands().get(0);
+            if (lhs.getOperands() != null)
+                lhs = trueOrFalse(lhs);
+            Expr rhs = expr.getOperands().get(1);
+            if (rhs.getOperands() != null)
+                rhs = trueOrFalse(rhs);
+            if (rhs instanceof BoolLiteral && lhs instanceof BoolLiteral){
+                BoolLiteral boolRhs = (BoolLiteral) rhs;
+                BoolLiteral boolLhs = (BoolLiteral) lhs;
+                boolean rhsValue = boolRhs.isBool();
+                boolean lhsValue = boolLhs.isBool();
+                if (rhsValue != lhsValue){
                     if (rhsValue) return boolRhs;
                     else return boolLhs;
                 }
@@ -462,7 +517,7 @@ public class CodeGenerator {
         } else numberRhs = (NumberLiteral)expr.getOperands().get(1);
         switch (expr.getOperation()) {
             case GREATERTHAN -> {
-                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) > numberRhs.getValue()){
+                if (numberLhs.getValue() > numberRhs.getValue()){
                     BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
                     boolType.setBool(true);
                     expr.setResultType(boolType);
@@ -484,7 +539,7 @@ public class CodeGenerator {
                 }
             }
             case LESSTHANOREQ -> {
-                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) <= numberRhs.getValue()){
+                if (numberLhs.getValue() <= numberRhs.getValue()){
                     BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
                     boolType.setBool(true);
                     expr.setResultType(boolType);
@@ -495,7 +550,7 @@ public class CodeGenerator {
                 }
             }
             case EQUALTO -> {
-                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) == numberRhs.getValue()){
+                if (numberLhs.getValue() == numberRhs.getValue()){
                     BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
                     boolType.setBool(true);
                     expr.setResultType(boolType);
@@ -506,7 +561,18 @@ public class CodeGenerator {
                 }
             }
             case GREATERTHANOREQ -> {
-                if (Integer.parseInt(varLhs.getVariable().getValue().toString()) >= numberRhs.getValue()){
+                if (numberLhs.getValue() >= numberRhs.getValue()){
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(true);
+                    expr.setResultType(boolType);
+                }else {
+                    BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
+                    boolType.setBool(false);
+                    expr.setResultType(boolType);
+                }
+            }
+            case NOT_EQUALS -> {
+                if (numberLhs.getValue() != numberRhs.getValue()){
                     BoolType boolType = new BoolType(expr.getLocation(), "yeahNah");
                     boolType.setBool(true);
                     expr.setResultType(boolType);
